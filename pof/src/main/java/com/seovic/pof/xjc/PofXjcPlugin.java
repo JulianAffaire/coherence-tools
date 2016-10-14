@@ -83,6 +83,8 @@ public class PofXjcPlugin
     private static final JType[] NONE = new JType[0];
 
     private long typeId = 1000;
+    private String pofDir;
+    private String pofname = "pof-config.xml";
 
     public PofXjcPlugin() {
     }
@@ -92,8 +94,10 @@ public class PofXjcPlugin
     }
 
     public String getUsage() {
-        return "  -Xpof              :  implement Portable Object Format (POF) serialization in generated classes\n"
-             + "  -Xpof:typeId=<id>  :  start type identifier for the generated POF types";
+        return "  -Xpof                :  implement Portable Object Format (POF) serialization in generated classes\n"
+             + "  -Xpof:typeId=<id>    :  start type identifier for the generated POF types\n"
+             + "  -Xpof:pofdir=<path>  :  path where to put the pof file (ex: :${basedir}/src/main/resources/conf/)\n"
+             + "  -Xpof:pofname=<name> :  name of the pof file (ex: my-pof-file-config.xml)";
     }
 
     @Override
@@ -108,10 +112,18 @@ public class PofXjcPlugin
                     if (typeId < 0) {
                         throw new BadCommandLineException("Initial POF type ID must be a positive integer");
                     }
-                }
-                catch (NumberFormatException e) {
+                } catch (NumberFormatException e) {
                     throw new BadCommandLineException("Initial POF type ID must be a positive integer");
                 }
+            } else if(args[i].startsWith("-Xpof:pofdir=")){
+                ret = 1;
+                pofDir = args[i].substring("-Xpof:pofdir=".length());
+                if (pofDir.length() == 0) {
+                    throw new BadCommandLineException("Initial POF dir must have a value");
+                }
+            } else if(args[i].startsWith("-Xpof:pofname=")){
+                ret = 1;
+                pofname = args[i].substring("-Xpof:pofname=".length());
             }
         }
         return ret;
@@ -143,9 +155,9 @@ public class PofXjcPlugin
         }
 
         try {
-            File targetDir = new File(options.targetDir, options.defaultPackage.replace('.', File.separatorChar));
+            File targetDir = new File(pofDir);
             targetDir.mkdirs();
-            File pofConfig = new File(targetDir, "pof-config.xml");
+            File pofConfig = new File(targetDir, pofname);
             JAXBMarshaller marshaller = new JAXBMarshaller(PofConfig.class, true);
             marshaller.marshal(cfg, new FileOutputStream(pofConfig));
         }
